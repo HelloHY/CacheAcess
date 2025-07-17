@@ -1,52 +1,84 @@
 #include <iostream>
 #include <vector>
-#include <cstdlib>
-#include <ctime>
-#include <memory>
+#include <random>
+#include <string>
 #include "FIFOCache.h"
 #include "LRUCache.h"
 #include "LFUCache.h"
 
-void testHotDataAccess(CachePolicy& policy, const std::string& name) {
-    const int CAPACITY = 30;
-    const int HOTKEY = 40;   // 热点数据 [0, HOTKEY)
-    const int COLDKEY = 70;  // 冷数据从 HOTKEY 到 HOTKEY+COLDKEY
-    const int OPERATIONS = 1000;
+using namespace Cache;
+const int CACHE_COUNT = 3; //缓存策略数量
 
-    srand(time(0));
-    int hit = 0;
 
-    // 模拟操作
-    for (int i = 0; i < OPERATIONS; ++i) {
-        bool isPut = rand() % 5 == 0; // 20% put 操作
+//统计并打印每种缓存策略在热点数据访问下的命中率
+void printResults(const std::vector<int>& hits, const std::vector<int>& gets) {
+    std::vector<std::string> names = { "FIFO" ,"LRU","LFU"}; 
 
+    for (int i = 0; i < hits.size(); ++i) {
+        double hitRate = gets[i] == 0 ? 0.0 : static_cast<double>(hits[i]) / gets[i];
+        std::cout << names[i] << " 命中率: " << (hitRate * 100.0) << "% (" << hits[i] << "/" << gets[i] << ")\n";
+    }
+}
+
+
+//少量数据项被频繁访问，而大部分数据访问较少
+void testHotDataAccess() {
+    std::cout << "\n=== 测试场景1：热点数据访问测试 ===" << std::endl;
+	int CAPACITY = 5;
+	int OPERATION_COUNT = 1000;
+    int HOTKEYS = 2;//hotkey = [0,1]
+	int COLDKEYS = 100;//coldkey = [2,3,...,101]
+
+    //智能指针指向基类
+    std::vector<std::shared_ptr<CachePolicy<int, std::string>>> caches = {
+        std::make_shared<FIFOCache<int,std::string>>(CAPACITY),
+		std::make_shared<LRUCache<int,std::string>>(CAPACITY),
+        std::make_shared<LFUCache<int,std::string>>(CAPACITY)
+    };
+
+    std::vector<int> hits(CACHE_COUNT);
+	std::vector<int> gets(CACHE_COUNT);
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    for (int i = 0; i < OPERATION_COUNT; i++) {
         int key;
-        if (rand() % 100 < 70) { // 70% 热数据
-            key = rand() % HOTKEY;
+        bool isPut = (gen() % 100) < 30;
+        
+        if (gen() % 100 < 70) {//决定访问的数据
+			key = gen() % HOTKEYS; 
         }
         else {
-            key = HOTKEY + rand() % COLDKEY;
+			key = HOTKEYS + (gen() % COLDKEYS); 
         }
 
-        // 实际我们 treat put/get 一样，因为 cache.access 会插入并驱逐
-        if (policy.access(key)) {
-            hit++;
+        for (int j = 0; j < CACHE_COUNT; j++) {
+            if (isPut) {//写数据
+				std::string value = "value_" + std::to_string(key);
+				caches[j]->put(key, value);
+            }
+            else//读数据
+            {
+				std::string value;
+                gets[j]++;
+                if (caches[j]->get(key, value)) {
+                    hits[j]++;
+                }
+            }
         }
     }
+    printResults(hits, gets);
+}
 
-    std::cout << name << " HIT RATE = " << (double)hit / OPERATIONS * 100 << "%" << std::endl;
+void testLoopPattern() {
+}
+void testWorkloadShift() {
 }
 
 int main() {
-    const int CAPACITY = 30;
-
-    std::unique_ptr<CachePolicy> fifo = std::make_unique<FIFOCache>(CAPACITY);
-    std::unique_ptr<CachePolicy> lru = std::make_unique<LRUCache>(CAPACITY);
-    std::unique_ptr<CachePolicy> lfu = std::make_unique<LFUCache>(CAPACITY);
-
-    testHotDataAccess(*fifo, "FIFO");
-    testHotDataAccess(*lru, "LRU");
-    testHotDataAccess(*lfu, "LFU");
-
+    testHotDataAccess();
+    testLoopPattern();
+    testWorkloadShift();
     return 0;
 }

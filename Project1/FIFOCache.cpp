@@ -1,18 +1,46 @@
-// src/FIFOCache.cpp
+#include <stdexcept>
+#include <iostream>
 #include "FIFOCache.h"
 
-FIFOCache::FIFOCache(int capacity) : capacity(capacity) {}
+namespace Cache {
 
-bool FIFOCache::access(int key) {
-    if (cache.count(key)) return true;
+    template <typename Key, typename Value>
+    FIFOCache<Key, Value>::FIFOCache(size_t capacity) : _capacity(capacity) {}
 
-    if (cache.size() >= capacity) {
-        int old = order.front(); 
-        order.pop();
-        cache.erase(old);
+    template <typename Key, typename Value>
+    void FIFOCache<Key, Value>::put(Key key, Value value) {
+        if (_cache.find(key) != _cache.end()) {
+            _cache[key] = value; // 更新值
+            return;
+        }
+
+        if (_cache.size() >= _capacity) {
+            Key old_key = _order.front();
+            _order.pop();
+            _cache.erase(old_key);
+        }
+
+        _order.push(key);
+        _cache[key] = value;
     }
 
-    cache.insert(key);
-    order.push(key);
-    return false;
+    template <typename Key, typename Value>
+    bool FIFOCache<Key, Value>::get(Key key, Value& value) {
+        auto it = _cache.find(key);
+        if (it == _cache.end()) return false;
+        value = it->second;
+        return true;
+    }
+
+    template <typename Key, typename Value>
+    Value FIFOCache<Key, Value>::get(Key key) {
+        auto it = _cache.find(key);
+        if (it == _cache.end()) throw std::out_of_range("Key not found in FIFO cache");
+        return it->second;
+    }
+
+    // 显式模板实例化
+    template class FIFOCache<int, std::string>;
+    // 可按需添加更多类型
 }
+

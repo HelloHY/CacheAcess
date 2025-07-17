@@ -13,11 +13,11 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="源文件\include">
-      <UniqueIdentifier>{449df9e2-fafb-4048-8468-70e63ade37a9}</UniqueIdentifier>
-    </Filter>
     <Filter Include="源文件\src">
       <UniqueIdentifier>{5e14cf27-3618-43af-b01d-c9815b7ca528}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\include">
+      <UniqueIdentifier>{449df9e2-fafb-4048-8468-70e63ade37a9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,16 +36,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CachePolicy.h">
-      <Filter>源文件\include</Filter>
+      <Filter>头文件\include</Filter>
     </ClInclude>
     <ClInclude Include="FIFOCache.h">
-      <Filter>源文件\include</Filter>
+      <Filter>头文件\include</Filter>
     </ClInclude>
     <ClInclude Include="LFUCache.h">
-      <Filter>源文件\include</Filter>
+      <Filter>头文件\include</Filter>
     </ClInclude>
     <ClInclude Include="LRUCache.h">
-      <Filter>源文件\include</Filter>
+      <Filter>头文件\include</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

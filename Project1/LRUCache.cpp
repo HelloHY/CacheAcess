@@ -1,49 +1,52 @@
+#include <iostream>
+#include <stdexcept>
 #include "LRUCache.h"
 
-LRUCache::LRUCache(int capacity, int k) : capacity(capacity), k(k) {}
+namespace Cache {
+	template <typename Key, typename Value>
+	LRUCache<Key, Value>::LRUCache(size_t capacity) : _capacity(capacity) {}
+	
+	template <typename Key, typename Value>
+	void LRUCache<Key, Value>::put(Key key, Value value) {
+		//检查是否存在
+		auto it = _cacheMap.find(key);
+		if (it != _cacheMap.end()) {
+		//存在：更新位置
+			it->second->second = value;
+			_cacheList.splice(_cacheList.begin(), _cacheList, it->second);
+		}
+		else {
+			if (_cacheList.size() >= _capacity && !_cacheList.empty()) {
+				//不存在：删掉尾部，插入新元素
+				auto last = _cacheList.back();
+				_cacheMap.erase(last.first);
+				_cacheList.pop_back();
+			}
+		}
+		//插入新元素到头部
+		_cacheList.emplace_front(key, value);
+		_cacheMap[key] = _cacheList.begin();
+	}
 
-bool LRUCache::access(int key) {
-    ++timestamp;
+	template <typename Key, typename Value>
+	bool LRUCache<Key, Value>::get(Key key, Value& value) {
+		auto it = _cacheMap.find(key);
+		if (it == _cacheMap.end()) {
+			return false; // 未找到
+		}
+		_cacheList.splice(_cacheList.begin(), _cacheList, it->second);
+		value = it->second->second;
+		return true; // 找到并更新位置
+	}
 
-    // ==== LRU-1 特例 ====
-    if (k == 1) {
-        if (usage_map.count(key)) {
-            usage.erase(usage_map[key]);
-            usage.push_front(key);
-            usage_map[key] = usage.begin();
-            return true;
-        }
+	template <typename Key, typename Value>
+	Value LRUCache<Key, Value>::get(Key key) {
+		auto it = _cacheMap.find(key);
+		if (it == _cacheMap.end()) throw std::out_of_range("Key not found in LRU cache");
 
-        if ((int)usage.size() >= capacity) {
-            int old = usage.back();
-            usage.pop_back();
-            usage_map.erase(old);
-        }
-
-        usage.push_front(key);
-        usage_map[key] = usage.begin();
-        return false;
-    }
-
-    // ==== LRU-k 通用情况 ====
-    auto& h = history[key];
-    if ((int)h.timestamps.size() == k) {
-        eviction_order.erase(h.timestamps.front());
-    }
-
-    h.timestamps.push_back(timestamp);
-    if ((int)h.timestamps.size() > k)
-        h.timestamps.pop_front();
-
-    if ((int)h.timestamps.size() == k) {
-        eviction_order[h.timestamps.front()] = key;
-    }
-
-    if ((int)history.size() > capacity) {
-        int victim = eviction_order.begin()->second;
-        eviction_order.erase(eviction_order.begin());
-        history.erase(victim);
-    }
-
-    return h.timestamps.size() >= k;
+		_cacheList.splice(_cacheList.begin(), _cacheList, it->second);
+		return it->second->second;
+	}
+	
+	template class LRUCache<int, std::string>;
 }
